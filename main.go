@@ -2,25 +2,30 @@ package main
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/SHAKULMITTAL22/payment-system/currency"
-	"github.com/SHAKULMITTAL22/payment-system/payment"
+	"golang.org/x/tools/go/packages"
 )
 
 func main() {
-	pay := payment.Payment{
-		Amount:   100.5,
-		Currency: "USD",
-		Method:   "PayPal",
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax,
 	}
 
-	processor := payment.PayPalProcessor{}
-	transactionID, err := processor.Process(pay)
+	pkgs, err := packages.Load(cfg, "github.com/SHAKULMITTAL22/payment-system/payment")
 	if err != nil {
-		fmt.Println("Error processing payment:", err)
-		return
+		log.Fatalf("Failed to load package with error: %v", err)
 	}
-
-	formattedAmount := currency.FormatCurrency(pay.Amount, pay.Currency)
-	fmt.Printf("Payment of %s successful with transaction ID: %s\n", formattedAmount, transactionID)
+	for _, p := range pkgs {
+		fmt.Printf("Package: %s\n", p.PkgPath)
+		fmt.Println("Types in scope:")
+		for _, name := range p.Types.Scope().Names() {
+			fmt.Println(name)
+			obj := p.Types.Scope().Lookup(name)
+			if obj != nil && obj.Name() == "Payment" {
+				fmt.Println("Found Payment struct.")
+				break
+			}
+		}
+	}
 }
